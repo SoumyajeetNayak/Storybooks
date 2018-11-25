@@ -3,18 +3,24 @@ const exphbs = require('express-handlebars');
 const mongoose = require('mongoose');
 const passport = require('passport');
 const keys = require('./config/keys');
+const path = require('path');
+const bodyParser = require('body-parser');
+const methodOverride = require('method-override');
 
+const {truncate, stripTags, formatDate, select, editIcon} = require('./helpers/hbs');
 
 const cookieParser = require('cookie-parser');
 const session = require('express-session');
 
-//Load user model
+//Load  model
 require('./Model/user');
+require('./Model/story');
 
 require('./config/passport')(passport)
 
 const index = require('./Routes/index');
 const auth = require('./Routes/auth');
+const stories = require('./Routes/stories');
 
 
 mongoose.connect(keys.mongoURI, {
@@ -25,7 +31,19 @@ mongoose.connect(keys.mongoURI, {
 
 const app = express();
 
+app.use(bodyParser.urlencoded({extended: false}));
+app.use(bodyParser.json());
+
+app.use(methodOverride('_method'));
+
 app.engine('handlebars', exphbs({
+    helpers: {
+        truncate: truncate,
+        stripTags: stripTags,
+        formatDate: formatDate,
+        select: select,
+        editIcon: editIcon
+    },
     defaultLayout: 'main'
 }));
 
@@ -47,9 +65,12 @@ app.use((req, res, next) => {
     next();
 });
 
+app.use(express.static(path.join(__dirname, 'public')));
+
 
 app.use('/', index);
 app.use('/auth', auth);
+app.use('/stories', stories);
 
 
 
